@@ -1,0 +1,31 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27018:27017"
+    volumes:
+      - weave_mongo:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "6015:6015"
+    environment:
+      PORT: 6015
+      MONGODB_URI: mongodb://mongo:27017/contentweave
+      JWT_SECRET: docker-dev-secret-change-me
+    volumes:
+      - ./server/uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  weave_mongo:
